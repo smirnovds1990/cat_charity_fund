@@ -22,5 +22,8 @@ class CRUDCharityProject(CRUDBase):
         project_id = project_id.scalars().first()
         return project_id
 
+    async def get_projects_by_completion_rate(self, session: AsyncSession):
+        pass
+
 
 charity_project_crud = CRUDCharityProject(CharityProject)
