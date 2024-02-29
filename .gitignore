@@ -130,3 +130,7 @@ dmypy.json
 
 # .idea
 .idea
+
+.db
+test.db
+fastapi.db
