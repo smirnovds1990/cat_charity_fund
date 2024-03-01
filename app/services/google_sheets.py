@@ -2,14 +2,14 @@ from datetime import datetime, timedelta
 
 from aiogoogle import Aiogoogle
 
-from app.constants import FORMAT
+from app.constants import DATE_FORMAT
 from app.core.config import settings
 
 
 class GoogleService:
 
     async def spreadsheets_create(self, wrapper_services: Aiogoogle) -> str:
-        now_date_time = datetime.now().strftime(FORMAT)
+        now_date_time = datetime.now().strftime(DATE_FORMAT)
         service = await wrapper_services.discover('sheets', 'v4')
         spreadsheet_body = {
             'properties': {'title': f'Отчёт на {now_date_time}',
@@ -48,7 +48,7 @@ class GoogleService:
             closed_projects: list,
             wrapper_services: Aiogoogle
     ) -> None:
-        now_date_time = datetime.now().strftime(FORMAT)
+        now_date_time = datetime.now().strftime(DATE_FORMAT)
         service = await wrapper_services.discover('sheets', 'v4')
         table_values = [
             ['Отчёт от', now_date_time],

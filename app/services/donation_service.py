@@ -4,17 +4,19 @@ from typing import Union
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants import MIN_AMOUNT
+from app.constants import MIN_INT_FIELD_AMOUNT
 from app.crud import charity_project_crud, donation_crud
 from app.models import CharityProject, Donation, User
 from app.schemas import (
     CharityProjectCreate, CharityProjectUpdate, DonationCreate
 )
 from app.services.utils import get_available_donation, get_open_project
-from app.services.validation import project_validation
 
 
 class InvestingService:
+
+    # def __init__(self, session: AsyncSession):
+    #     self.session = session
 
     def __set_money_to_donations_and_projects(
             self,
@@ -81,7 +83,7 @@ class InvestingService:
             )
 
     def __check_project_is_invested(self, project: CharityProject):
-        if project.invested_amount > MIN_AMOUNT:
+        if project.invested_amount > MIN_INT_FIELD_AMOUNT:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='В проект были внесены средства, не подлежит удалению!'
@@ -96,6 +98,25 @@ class InvestingService:
         await session.commit()
         await session.refresh(invested_object)
         return invested_object
+
+    def __project_validation(
+        self,
+        project: CharityProject,
+        obj_in: CharityProjectUpdate
+    ):
+        if project.fully_invested:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Закрытый проект нельзя редактировать!'
+            )
+        if (
+            obj_in.full_amount is not None and
+            obj_in.full_amount < project.invested_amount
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Нелья установить значение full_amount меньше уже вложенной суммы.'
+            )
 
     async def create_new_donation(
         self,
@@ -137,7 +158,7 @@ class InvestingService:
         obj_in: CharityProjectUpdate,
         session: AsyncSession
     ):
-        project_validation(project, obj_in)
+        self.__project_validation(project, obj_in)
         if obj_in.name is not None:
             await self.__check_name_duplicate(obj_in.name, session)
         project = await charity_project_crud.update(project, obj_in, session)
