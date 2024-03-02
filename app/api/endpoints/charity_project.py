@@ -8,7 +8,7 @@ from app.schemas.charity_project import (
     CharityProjectCreate, CharityProjectCreateDB, CharityProjectDB,
     CharityProjectUpdate, GetCharityProjectDB
 )
-from app.services.donation_service import service
+from app.services.donation_service import InvestingService
 from app.api.utils import get_existing_project_or_404
 
 
@@ -39,9 +39,8 @@ async def create_charity_project(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Только для суперюзеров."""
-    return await service.create_new_project(
-        obj_in=charity_project, session=session
-    )
+    service = InvestingService(session=session)
+    return await service.create_new_project(obj_in=charity_project)
 
 
 @router.patch(
@@ -56,9 +55,8 @@ async def update_charity_project(
 ):
     """Только для суперюзеров."""
     project = await get_existing_project_or_404(project_id, session)
-    return await service.update_project(
-        project=project, obj_in=obj_in, session=session
-    )
+    service = InvestingService(session=session)
+    return await service.update_project(project=project, obj_in=obj_in)
 
 
 @router.delete(
@@ -72,4 +70,5 @@ async def delete_charity_project(
 ):
     """Только для суперюзеров."""
     project = await get_existing_project_or_404(project_id, session)
-    return await service.delete_project(project, session)
+    service = InvestingService(session=session)
+    return await service.delete_project(project)

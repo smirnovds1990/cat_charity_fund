@@ -6,7 +6,7 @@ from app.core.user import current_superuser, current_user
 from app.crud.donation import donation_crud
 from app.models import User
 from app.schemas.donation import AllDonationsDB, DonationCreate, UserDonationDB
-from app.services.donation_service import service
+from app.services.donation_service import InvestingService
 
 
 router = APIRouter()
@@ -39,9 +39,8 @@ async def create_donation(
     user: User = Depends(current_user)
 ):
     """Только для авторизованных пользователей."""
-    return await service.create_new_donation(
-        obj_in=donation, session=session, user=user
-    )
+    service = InvestingService(session=session)
+    return await service.create_new_donation(obj_in=donation, user=user)
 
 
 @router.get(

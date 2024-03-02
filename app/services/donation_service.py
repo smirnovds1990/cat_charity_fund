@@ -15,8 +15,8 @@ from app.services.utils import get_available_donation, get_open_project
 
 class InvestingService:
 
-    # def __init__(self, session: AsyncSession):
-    #     self.session = session
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     def __set_money_to_donations_and_projects(
             self,
@@ -70,11 +70,10 @@ class InvestingService:
 
     async def __check_name_duplicate(
         self,
-        project_name: str,
-        session: AsyncSession,
+        project_name: str
     ):
         project_id = await charity_project_crud.get_project_id_by_name(
-            project_name, session
+            project_name, self.session
         )
         if project_id is not None:
             raise HTTPException(
@@ -91,12 +90,11 @@ class InvestingService:
 
     async def __add_commit_and_refresh_new_donation_and_project(
         self,
-        session: AsyncSession,
         invested_object: Union[CharityProject, Donation]
     ):
-        session.add(invested_object)
-        await session.commit()
-        await session.refresh(invested_object)
+        self.session.add(invested_object)
+        await self.session.commit()
+        await self.session.refresh(invested_object)
         return invested_object
 
     def __project_validation(
@@ -121,57 +119,54 @@ class InvestingService:
     async def create_new_donation(
         self,
         obj_in: DonationCreate,
-        user: User,
-        session: AsyncSession
+        user: User
     ):
-        new_object = await donation_crud.create(obj_in, session, user)
-        open_project = await get_open_project(session)
+        new_object = await donation_crud.create(obj_in, self.session, user)
+        open_project = await get_open_project(self.session)
         invested_donation = self.__distribute_money(
             obj_in=new_object,
             open_project=open_project,
             available_donation=None
         )
         return await self.__add_commit_and_refresh_new_donation_and_project(
-            session=session, invested_object=invested_donation
+            invested_object=invested_donation
         )
 
     async def create_new_project(
         self,
-        obj_in: CharityProjectCreate,
-        session: AsyncSession
+        obj_in: CharityProjectCreate
     ):
-        await self.__check_name_duplicate(obj_in.name, session)
-        new_object = await charity_project_crud.create(obj_in, session)
-        available_donation = await get_available_donation(session)
+        await self.__check_name_duplicate(obj_in.name)
+        new_object = await charity_project_crud.create(
+            obj_in, self.session
+        )
+        available_donation = await get_available_donation(self.session)
         invested_project = self.__distribute_money(
             obj_in=new_object,
             open_project=None,
             available_donation=available_donation
         )
         return await self.__add_commit_and_refresh_new_donation_and_project(
-            session=session, invested_object=invested_project
+            invested_object=invested_project
         )
 
     async def update_project(
         self,
         project: CharityProject,
-        obj_in: CharityProjectUpdate,
-        session: AsyncSession
+        obj_in: CharityProjectUpdate
     ):
         self.__project_validation(project, obj_in)
         if obj_in.name is not None:
-            await self.__check_name_duplicate(obj_in.name, session)
-        project = await charity_project_crud.update(project, obj_in, session)
+            await self.__check_name_duplicate(obj_in.name)
+        project = await charity_project_crud.update(
+            project, obj_in, self.session
+        )
         return project
 
     async def delete_project(
             self,
-            project: CharityProject,
-            session: AsyncSession
+            project: CharityProject
     ):
         self.__check_project_is_invested(project)
-        project = await charity_project_crud.remove(project, session)
+        project = await charity_project_crud.remove(project, self.session)
         return project
-
-
-service = InvestingService()
