@@ -30,12 +30,10 @@ class CRUDBase:
             session: AsyncSession,
             user: Optional[User] = None
     ):
-        if user is not None:
-            db_objs = await session.execute(
-                select(self.model).where(self.model.user_id == user.id)
-            )
-        else:
-            db_objs = await session.execute(select(self.model))
+        db_objs = select(self.model)
+        if user:
+            db_objs = db_objs.where(self.model.user_id == user.id)
+        db_objs = await session.execute(db_objs)
         return db_objs.scalars().all()
 
     async def create(
@@ -45,7 +43,7 @@ class CRUDBase:
             user: Optional[User] = None
     ):
         obj_in_data = obj_in.dict()
-        if user is not None:
+        if user:
             obj_in_data['user_id'] = user.id
         obj_in_data['create_date'] = datetime.utcnow()
         db_obj = self.model(**obj_in_data)
